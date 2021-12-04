@@ -60,7 +60,6 @@
     ;; Note that the comment character isn't set up until acme-mode is called.
     (define-key map ":"		'acme-colon)
     (define-key map "\C-c;"	'comment-region)
-    (define-key map "\C-t"	'jump-to-keyword-column)
     (define-key map "\C-m"	'newline-and-indent)
     (define-key map (kbd "<backspace>")	'acme-delete-char)
     ;; Also map DEL to acme-delete-char because some terminals send del instead of backspace
@@ -76,9 +75,6 @@
     (define-key map [acme-colon]
       '(menu-item "Insert Colon" acme-colon
 		  :help "Insert a colon; if it follows a label, delete the label's indentation"))
-    (define-key map [jump-to-keyword-column]
-      '(menu-item "Jump to keyword column" jump-to-keyword-column
-		  :help ""))
     (define-key map [acme-delete-char]
       '(menu-item "Delete char" acme-delete-char
 		  :help "Delete char or all tabs and spaces until beginning of line"))
@@ -207,13 +203,6 @@ Special commands:
 
 ;; Obsolete since Emacs-22.1.
 (defalias 'acme-newline 'newline-and-indent)
-
-(defun jump-to-keyword-column ()
-  "Jump to keyword column."
-  (interactive)
-  (beginning-of-line)
-  (skip-syntax-forward "w_.")
-  (skip-syntax-forward " "))
 
 (defun acme-delete-char ()
   "Delete char or all tabs and spaces until beginning of line."
