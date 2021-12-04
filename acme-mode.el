@@ -134,8 +134,8 @@ Special commands:
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults '(acme-font-lock-keywords))
   (set (make-local-variable 'indent-line-function) 'acme-indent-line)
-  ;; Stay closer to the old TAB behavior (was tab-to-tab-stop).
-  (set (make-local-variable 'tab-always-indent) nil)
+  ;; Tab just indents.
+  (set (make-local-variable 'tab-always-indent) t)
 
   (run-hooks 'acme-mode-set-comment-hook)
   ;; Make our own local child of acme-mode-map
