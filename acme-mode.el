@@ -84,7 +84,7 @@
 
 (defconst acme-font-lock-keywords
   (append 
-   '(("^\\(\\(\\sw\\|\\s_\\)+\\)\\>:?[ \t]*\\(\\sw+\\(\\.\\sw+\\)*\\)?"
+   '(("^\\(\\(\\.?\\sw\\|\\s_\\)+\\)\\>:?[ \t]*\\(\\sw+\\(\\.\\sw+\\)*\\)?"
       (1 font-lock-function-name-face) (3 font-lock-keyword-face nil t))
      ;; label started from ".".
      ("^\\(\\.\\(\\sw\\|\\s_\\)+\\)\\>:"
@@ -154,7 +154,8 @@ Special commands:
   (setq fill-prefix "\t")
   (set (make-local-variable 'tab-width) 20)
   (set (make-local-variable 'comment-column) 46)
-  (set (make-local-variable 'tab-stop-list) '(20 46 50 54 58 62 66 70 74 78 82))
+  ;; NB disabled to see if this makes any difference anymore
+  ;; (set (make-local-variable 'tab-stop-list) '(20 46 50 54 58 62 66 70 74 78 82))
   (set (make-local-variable 'indent-tabs-mode) nil)
   (run-mode-hooks 'acme-mode-hook))
 
@@ -175,8 +176,11 @@ Special commands:
 
 (defun acme-calculate-indentation (def-val)
   (or
-   ;; !-directive
-   (and (looking-at "\\!\\(\\sw\\)+\\|[{}]")
+   ;; !-or *-directive or
+   (and (looking-at "\\!\\(\\sw\\)+\\|\\*")
+        (if (= (current-column) 0) (- tab-width 4)
+          (0)))
+   (and (looking-at "[{}]")
         (if (= (current-column) 0) (0)
           (- tab-width 4)))
    ;; Flush labels and symbols to the left margin.
