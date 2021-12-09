@@ -157,6 +157,8 @@ Special commands:
   ;; NB disabled to see if this makes any difference anymore
   ;; (set (make-local-variable 'tab-stop-list) '(20 46 50 54 58 62 66 70 74 78 82))
   (set (make-local-variable 'indent-tabs-mode) nil)
+  ;; extract labels into imenu
+  (setq imenu-generic-expression '((nil "^\\(\\sw+\\)" 1)))
   (run-mode-hooks 'acme-mode-hook))
 
 (defun acme-indent-line ()
