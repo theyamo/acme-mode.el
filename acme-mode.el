@@ -10,13 +10,18 @@
 ;; This mode is based on Emacs' standard asm-mode with extensive customizations
 ;; to support 6502/ACME syntax better.
 ;; Also includes a helper function `acme-rename-label' to rename all instances
-;; of a label in the buffer.
+;; of a label in the buffer.  Another one `acme-clean-labels' tries to improve
+;; labels by removing unnecessary tabs and appending ':' where one does not exist.
 
 ;; The whole indentation logic is a bit of a mess; some parts taken from asm-mode
 ;; with custom stuff around it, coded in a different style.
 
-;; It's too complex for what it tries to achieve, but seems to work, so not
-;; touching it for now.
+;; It's too complex for what it tries to achieve, but seems to work, so I consider
+;; it good enough.
+
+;; Known issues:
+;; `acme-clean-labels' does not work very well.
+;; and probably more.
 
 ;;; Code:
 
@@ -67,36 +72,20 @@
     ;; Also map DEL to acme-delete-char because some terminals send del instead of backspace
     (define-key map (kbd "DEL")	'acme-delete-char)
     (define-key map "\C-k"	'acme-kill-line-preserve-label)
-    (define-key map [menu-bar] (make-sparse-keymap))
-    (define-key map [menu-bar acme-mode] (cons "Acme" map))
-    (define-key map [comment-region]
-      '(menu-item "Comment Region" comment-region
-		  :help "Comment or uncomment each line in the region"))
-    (define-key map [newline-and-indent]
-      '(menu-item "Insert Newline and Indent" newline-and-indent
-		  :help "Insert a newline, then indent according to major mode"))
-    (define-key map [acme-colon]
-      '(menu-item "Insert Colon" acme-colon
-		  :help "Insert a colon; if it follows a label, delete the label's indentation"))
-    (define-key map [acme-delete-char]
-      '(menu-item "Delete char" acme-delete-char
-		  :help "Delete char or all tabs and spaces until beginning of line"))
-    (define-key map [acme-kill-line-preserve-label]
-      '(menu-item "Kill Line, preserve label" acme-kill-line-preserve-label
-		  :help "Kill line but preserve label"))
     map)
   "Keymap for Acme mode.")
 
-(defconst acme-identifier-regexp
-  "\\(\\_<[a-zA-Z_?\\.\\-\\+][a-zA-Z0-9_]*\\_>\\)"
-  "Acme identifier regexp for font locking.")
+(defconst acme-expression-regexp
+  "\\(\\sw\\|\\s_\\)+"
+  "Rough matching for expressions (labels, operands, numbers).
+Used for matching arguments.")
 
 (defconst acme-label-regexp
-  "\\(\\_<[a-zA-Z_?\\.\\-\\+][a-zA-Z0-9_]*\\_>\\):?"
+  "\\([-\\+]+\\|[\\.\\@a-zA-Z_][a-zA-Z0-9_]*\\):?"
   "Acme label regexp for font locking.")
 
 (defconst acme-opcode-regexp
-  "\\(\\_<\\sw+\\_>\\)"
+  "\\(\\(\\sw\\)+\\(\\+[0-9]\\)?\\)"
   "Acme label regexp for font locking.")
 
 (defconst acme-directive-regexp
@@ -122,31 +111,28 @@
      (,acme-directive-regexp . 'font-lock-keyword-face)
      ;; Function
      (,acme-function-regexp 1 'font-lock-keyword-face)
-     ;; Index registers
-     ;; (")?,[xy]"
-     ;;  . 'font-lock-type-face)
      ;; Program counter. Dumb matching pattern because it highlights wrong stuff too.
      ("*" . 'font-lock-keyword-face)
      ;; Immediate values
      ("#" . 'font-lock-type-face)
      ;; Indirect y
-     (,(concat "\\((\\)" acme-identifier-regexp "\\(),y\\)")
+     (,(concat "\\((\\)" acme-expression-regexp "\\(),y\\)")
       (1 'font-lock-type-face)
       (3 'font-lock-type-face))
      ;; Indirect x
-     (,(concat "\\((\\)" acme-identifier-regexp "\\(,x)\\)")
+     (,(concat "\\((\\)" acme-expression-regexp "\\(,x)\\)")
       (1 'font-lock-type-face)
       (3 'font-lock-type-face))
-     ;; Absolute x + y
-     (,(concat acme-identifier-regexp "\\(,[xy]\\)")
-      (2 'font-lock-type-face))
+     ;; Absolute x & y
+     (,(concat acme-expression-regexp "\\(,[xy]\\)")
+      2 'font-lock-type-face)
      ;; Numbers. Not using this, works too haphazardly due to syntax settings.
      ;;(,acme-constant-regexp . 'font-lock-constant-face)
      )
   "Additional expressions to highlight in Assembler mode.")
 
 ;;;###autoload
-(defun acme-mode ()
+(define-derived-mode acme-mode prog-mode "ACME"
   "Major mode for editing ACME assembler code.
 
 Turning on Acme mode runs the hook `acme-mode-hook' at the end of
@@ -154,16 +140,13 @@ initialization.
 
 Special commands:
 \\{acme-mode-map}"
-  (interactive)
   (kill-all-local-variables)
   (setq mode-name "Acme")
   (setq major-mode 'acme-mode)
-  (setq local-abbrev-table acme-mode-abbrev-table)
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults '(acme-font-lock-keywords))
   (set (make-local-variable 'indent-line-function) 'acme-indent-line)
-  ;; Tab just indents.
-  (set (make-local-variable 'tab-always-indent) t)
+  (set (make-local-variable 'tab-always-indent) t) ;; Tab just indents.
   (use-local-map (nconc (make-sparse-keymap) acme-mode-map))
   (local-set-key (vector acme-comment-char) 'acme-comment)
   (set-syntax-table (make-syntax-table acme-mode-syntax-table))
@@ -206,7 +189,7 @@ Special commands:
           (indent-to indent-level-in-chars))))
      ;; Does the line contain a symbol assignment?
      ;; * is specifically disallowed even though it looks like an assignment
-     ((looking-at "^\\([^*]\\.?\\(\\sw\\|\\s_\\)*\\s-*=\\)")
+     ((looking-at "^\\([^*\n]\\.?\\(\\sw\\|\\s_\\)*\\s-*=\\)")
       (progn
         ;; Go on top of the equals char
         (goto-char (1- (match-end 1)))
@@ -215,8 +198,14 @@ Special commands:
      (t (progn
           ;; Everything else is indented according to usual indentation rules.
           (goto-char savep)
-          (acme-do-indent-line)))))
-  )
+          (acme-do-indent-line))))
+    ;; Verify that ; comment is in the comment column
+    (save-excursion
+      (let ((comment-pos (comment-search-forward (line-end-position) t)))
+        (when comment-pos
+           (goto-char comment-pos)
+           (when (looking-at ";[^;]+")
+             (indent-to acme-comment-column)))))))
 
 (defun acme-do-indent-line ()
   "Perform the indentation.  Helper for `acme-indent-line'."
@@ -325,7 +314,7 @@ Special commands:
                 (while (re-search-forward (concat "\\b" label "\\b") nil t)
                   (replace-match new-name t t nil 0))))))))
 
-
+;; Below taken and modified from asm-mode.
 (defun acme-comment ()
   "Convert an empty comment to a `larger' kind, or start a new one.
 These are the known comment classes:
@@ -383,12 +372,24 @@ repeatedly until you are satisfied with the kind of comment."
   (while (looking-at "[[:space:]]+")
     (delete-region (match-beginning 0) (match-end 0))))
 
+;; This really doesn't work very well.
 (defun acme-clean-labels ()
   "Convert tabs to spaces and add semicolon to labels with query-regexp."
   (interactive)
-  (beginning-of-buffer)
+  ;; (beginning-of-buffer)
   (untabify (point-min) (point-max))
-  (query-replace-regexp "^\\(\\.?\\sw+\\)\\( \\)" "\\1:"))
+  (query-replace-regexp "^\\([-\\.\\+a-zA-Z_][a-zA-Z0-9_]*\\)\\(\\s-+\\)" "\\1:\\2"))
+
+
+(defun acme-comment-box (start end)
+  "Hack comment box to work properly."
+  (interactive "r")
+  (let ((current-prefix-arg '(3))
+        (region-start start)
+        (region-end end))
+    (comment-box region-start region-end 2)
+    (indent-region region-start region-end)
+    ))
 
 (provide 'acme-mode)
 
