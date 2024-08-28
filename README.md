@@ -10,17 +10,17 @@ Based on Emacs' standard asm-mode with following differences:
   * Kill-line (C-k) tries to preserve label if the point to the right of it
   * Variable assignments are formatted opinionatedly
 
-## Installation
+# Installation
 
 Clone/copy file to your emacs' elisp folder and add following:
 
 ```
 (load "~/.emacs.d/acme-mode")
 (add-to-list 'auto-mode-alist '("\\.\\(acme\\|a\\)\\'" . acme-mode))
-
+```
 Replace .emacs.d with dir of your choice.
 
-## License
+# License
 
 Simplified BSD license.
 
