@@ -380,16 +380,15 @@ repeatedly until you are satisfied with the kind of comment."
   (untabify (point-min) (point-max))
   (query-replace-regexp "^\\([-\\.\\+a-zA-Z_][a-zA-Z0-9_]*\\)\\(\\s-+\\)" "\\1:\\2"))
 
-
-(defun acme-comment-box (start end)
-  "Hack comment box to work properly."
-  (interactive "r")
-  (let ((current-prefix-arg '(3))
-        (region-start start)
-        (region-end end))
-    (comment-box region-start region-end 2)
-    (indent-region region-start region-end)
-    ))
+;; (defun acme-comment-box (start end)
+;;   "Hack comment box to work properly."
+;;   (interactive "r")
+;;   (let ((current-prefix-arg '(3))
+;;         (region-start start)
+;;         (region-end end))
+;;     (comment-box region-start region-end 2)
+;;     (indent-region region-start region-end)
+;;     ))
 
 (provide 'acme-mode)
 
