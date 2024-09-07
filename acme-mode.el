@@ -86,11 +86,11 @@ Used for matching arguments.")
 
 (defconst acme-opcode-regexp
   "\\(\\(\\sw\\)+\\(\\+[0-9]\\)?\\)"
-  "Acme label regexp for font locking.")
+  "Acme opcode regexp for font locking.")
 
 (defconst acme-directive-regexp
   "\\(\\!\\_<\\sw+\\_>\\)"
-  "Acme label regexp for font locking.")
+  "Acme directive regexp for font locking.")
 
 (defconst acme-function-regexp
   "\\(\\_<\\sw+\\_>\\)("
@@ -168,7 +168,7 @@ Special commands:
   (set (make-local-variable 'tab-width) acme-code-column)
   (set (make-local-variable 'comment-column) acme-comment-column)
   (set (make-local-variable 'indent-tabs-mode) nil)
-  ;; Extract labels into imenu
+  ;; Extract labels and constants into imenu
   (setq imenu-generic-expression '((nil "^\\([a-zA-Z0-9_]+\\)+" 1)))
   (run-mode-hooks 'acme-mode-hook))
 
