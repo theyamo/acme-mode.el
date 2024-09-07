@@ -22,6 +22,5 @@ Replace .emacs.d with dir of your choice.
 
 # License
 
-Simplified BSD license.
-
+GNU GPL license.
 

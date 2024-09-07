@@ -1,9 +1,10 @@
 ;;; acme-mode.el --- asm-mode customized to work better with ACME syntax -*- lexical-binding: t; -*-
 
-;; This code is licensed under the Simplified BSD license.
 
 ;; Author: theyamo
 ;; URL: https://github.com/theyamo/acme-mode.el
+
+;; Licensed under GNU General Public License.
 
 ;;; Commentary:
 
