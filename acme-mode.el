@@ -50,7 +50,7 @@
 
 (defvar acme-mode-syntax-table
   (let ((st (make-syntax-table)))
-    (modify-syntax-entry ?_ "w" st)              ;; Underscore is a word character
+    ;; (modify-syntax-entry ?_ "w" st)              ;; Underscore is a word character
     (modify-syntax-entry ?a "w" st)              ;; Letters a-z are word characters
     (modify-syntax-entry ?A "w" st)              ;; Letters A-Z are word characters
     (modify-syntax-entry ?0 "w" st)              ;; Digits 0-9 are word characters
