@@ -66,7 +66,7 @@
     
     
     (modify-syntax-entry ?\n "> b" st)
-    ;; (modify-syntax-entry ?_ "_" st)
+    (modify-syntax-entry ?_ "_" st)
     (modify-syntax-entry ?\. "_" st)
     (modify-syntax-entry ?@ "_" st)
     (modify-syntax-entry ?* "_" st)
